@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Script servant à récupérer les données GNSS pour placer le drone sur une carte
+"""
 # -*- coding: utf-8 -*-
 
 import re
