@@ -1,3 +1,6 @@
+"""
+Script visant à prendre une vidéo avec la caméra IA, et à l'afficher sur une page internet avec le module de reconnaissance IA activé
+"""
 import cv2
 from flask import Flask, Response
 
