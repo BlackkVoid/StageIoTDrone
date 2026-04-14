@@ -1,4 +1,7 @@
 #!/bin/bash
+"""
+Lancement de l'interface 4G
+"""
 INTERFACE="usb0"
 
 echo "Activation de l'interface $INTERFACE..."
