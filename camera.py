@@ -1,3 +1,6 @@
+"""
+Simple video de la caméra IA affichée dans une page internet
+"""
 from flask import Flask, Response, render_template_string
 from picamera2 import Picamera2
 import cv2
