@@ -1,3 +1,6 @@
+"""
+Script visant à prendre une vidéo avec la caméra IA et à l'afficher dans une page internet avec la reconnaissance IA activée
+"""
 from flask import Flask, Response
 import subprocess
 
