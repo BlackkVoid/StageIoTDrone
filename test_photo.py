@@ -1,6 +1,9 @@
+"""
+Prend une photo à partir de la caméra thermique
+"""
 import cv2
 
-cam = cv2.VideoCapture(0)
+cam = cv2.VideoCapture(2) #index à changer en fonction de la caméra à utiliser
 
 while True:
 	ret, image = cam.read()
