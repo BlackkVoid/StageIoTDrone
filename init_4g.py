@@ -20,7 +20,7 @@ def write_ser(command):
 
 def run_bash(command):
     print(command)
-    result = subprocess.run(command, shell=True, capture_output>
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
     print(result.stdout.strip())
     return result.stdout.strip()
 
