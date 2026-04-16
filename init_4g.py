@@ -32,12 +32,18 @@ write_ser("AT+CGDCONT=1,'IP','sosh'")
 write_ser("AT+COPS?")
 write_ser("AT+CFUN=0")
 write_ser("AT+CFUN=1")
-
+run_bash("./lancement_4g.sh")
+"""
 run_bash("sudo ip link set usb0 up")
 print("Activation de l'interface 4G")
+time.sleep(2)
 run_bash("sudo dhclient -r usb0")
 print("Initialisation de l'adresse IP")
+time.sleep(2)
 run_bash("sudo dhclient -v usb0")
 print("Connexion 4G activée !")
-
+time.sleep(2)
+run_bash("ping -I usb0 -c 4 8.8.8.8")
+"""
 ser.close()
+print("\r\n\n")
