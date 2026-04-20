@@ -14,3 +14,24 @@ CMD = [
     "|",
     "jq", "'select(.detections != null) | .detections[] | select(.class_id ==0 )'"
 ]
+
+
+
+
+PERSON_CLASS_ID = 0  # COCO standard IMX500
+
+for line in process.stdout:
+    try:
+        data = json.loads(line)
+
+        detections = data.get("detections", [])
+        persons = [
+            d for d in detections
+            if d.get("class_id") == PERSON_CLASS_ID
+        ]
+
+        if persons:
+            print("👤 Personne détectée :", persons)
+
+    except json.JSONDecodeError:
+        continue
