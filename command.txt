@@ -1,0 +1,16 @@
+CMD = [
+    "rpicam-vid",
+    "-t", "0",
+    "--width", "1280",
+    "--height", "720",
+    "--framerate", "30",
+    "--codec", "mjpeg",
+    "--post-process-file", "/usr/share/rpi-camera-assets/test_imx500_mobilenet_ssd.json",
+    "--metadata","-",
+    "--metadata-format","json",
+    "--timeout","0",
+    "--no-annotate",
+    "2>/dev/null",
+    "|",
+    "jq", "'select(.detections != null) | .detections[] | select(.class_id ==0 )'"
+]
