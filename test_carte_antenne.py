@@ -1,44 +1,43 @@
 #!/usr/bin/env python3
-"""
-Script servant à récupérer les données GNSS pour placer le drone sur une carte
-"""
-# -*- coding: utf-8 -*-
-
+import time
 import re
 import serial
-from pyproj import Transformer
-import matplotlib.pyplot as plt
-import geopandas as gpd
+import math
+import urllib.request
+import subprocess
+from io import BytesIO
+from PIL import Image
 
-# =========================
-# 1. CONVERSION NMEA
-# =========================
+import matplotlib.pyplot as plt
+
+def run_bash(command):
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    print(result.stdout.strip())
+    return result.stdout.strip()
 
 def nmea_to_decimal(ddmm):
-    """
-    Convertit format NMEA DDMM.MMMM → degrés décimaux
-    """
     ddmm = float(ddmm)
     deg = int(ddmm // 100)
     minutes = ddmm - deg * 100
     return deg + minutes / 60
 
-
 def parse_cgpsinfo(line):
-    """
-    Parse AT+CGPSINFO:
-    +CGPSINFO: 4738.167629,N,00659.703404,E,...
-    """
+
+    if not isinstance(line, str):
+        return None
+
     match = re.search(
-        r"\+CGPSINFO:\s*([\d.]+),([NS]),([\d.]+),([EW])",
+        r"\+CGPSINFO:\s*([\d.]*),([NS]),([\d.]*),([EW])",
         line
     )
 
     if not match:
-        print("No match")
         return None
 
     lat_raw, ns, lon_raw, ew = match.groups()
+
+    if lat_raw == "" or lon_raw == "":
+        return None
 
     lat = nmea_to_decimal(lat_raw)
     lon = nmea_to_decimal(lon_raw)
@@ -48,96 +47,148 @@ def parse_cgpsinfo(line):
     if ew == "W":
         lon = -lon
 
+    with open("coordonnees.twt", "w") as f:
+      f.write(f"\n{latitude},{longitude}")
     return lat, lon
 
-
-# =========================
-# 2. CONVERSION CRS
-# =========================
-
-gnss_to_lambert = Transformer.from_crs(
-    "EPSG:4326",
-    "EPSG:2154",
-    always_xy=True
-)
-
-
-def gnss_to_xy(lat, lon):
-    x, y = gnss_to_lambert.transform(lon, lat)
-    return x, y
-
-
-# =========================
-# 3. LECTURE SERIE (ANTENNE)
-# =========================
-
+# ========================
+# Récupère les données gps
+# ========================
 def get_gnss_from_serial(port="/dev/ttyUSB2", baudrate=115200):
-    """
-    Lit une trame AT+CGPSINFO depuis l'antenne
-    """
-    ser = serial.Serial(port, baudrate, timeout=1)
 
-    ser.write(b"AT+CGPSINFO\r")
-    ser.readline()
-    line = ser.readline().decode(errors="ignore")
+    try:
+        ser = serial.Serial(port, baudrate, timeout=2)
 
-    ser.close()
-#    print (line)
-    return parse_cgpsinfo(line)
+        ser.write(b"AT+CGPSINFO\r")
+
+        lines = []
+        for _ in range(5):
+            l = ser.readline().decode(errors="ignore").strip()
+            lines.append(l)
+
+        ser.close()
+
+        for l in lines:
+            if "+CGPSINFO" in l:
+                return parse_cgpsinfo(l)
+
+        return None
+
+    except Exception as e:
+        print("Serial error:", e)
+        return None
 
 
 # =========================
-# 4. CARTE
+# Récupère la carte
 # =========================
 
-def plot_point(x, y):
-    france = gpd.read_file("regions.geojson")
-    france = france.to_crs("EPSG:2154")  # IMPORTANT: cohérent avec GNSS
-    # enlever uniquement les DOM-TOM (outre-mer)
-    france = france[~france["nom"].isin([
-        "Guadeloupe",
-        "Martinique",
-        "Guyane",
-        "La Réunion",
-        "Mayotte"
-    ])]
+def deg2num(lat, lon, zoom):
+    lat_rad = math.radians(lat)
+    n = 2.0 ** zoom
 
-    fig, ax = plt.subplots(figsize=(10, 10))
+    xtile = int((lon + 180.0) / 360.0 * n)
+    ytile = int((1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n)
 
-    france.plot(ax=ax, color="lightgreen", edgecolor="black", alpha=0.6)
+    return xtile, ytile
 
-    ax.scatter(x, y, color="red", s=50)
+
+def load_osm_tile(lat, lon, zoom=17):
+
+    xtile, ytile = deg2num(lat, lon, zoom)
+
+    url = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{zoom}/{ytile}/{xtile}.jpg"
+
+    try:
+        img = Image.open(BytesIO(urllib.request.urlopen(url).read()))
+        return img
+    except Exception as e:
+        print("Tile error:", e)
+        return None
+
+def get_tile_bounds(lat, lon, zoom):
+
+    xtile, ytile = deg2num(lat, lon, zoom)
+
+    n = 2 ** zoom
+
+    lon_left = xtile / n * 360.0 - 180.0
+    lon_right = (xtile + 1) / n * 360.0 - 180.0
+
+    lat_top = math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * ytile / n))))
+    lat_bottom = math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * (ytile + 1) / n))))
+
+    return lon_left, lon_right, lat_bottom, lat_top
+
+# =========================
+# Affiche la carte
+# =========================
+
+def plot_point(lat, lon):
+
+    zoom = 17
+
+    img = load_osm_tile(lat, lon, zoom)
+
+    if img is None:
+        print("Erreur tile")
+        return
+
+    left, right, bottom, top = get_tile_bounds(lat, lon, zoom)
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+
+    ax.imshow(img, extent=[left, right, bottom, top])
+
+    ax.scatter(lon, lat, color="red", s=80, zorder=5)
 
     ax.set_title("Position du drone")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    zoom = 30000  # 10 km
 
-    ax.set_xlim(x - zoom, x + zoom)
-    ax.set_ylim(y - zoom, y + zoom)
-    fig.savefig('/var/www/html/images/CarteFrance.png', dpi=400)
+    ax.set_xlabel("Longitude")
+    ax.set_ylabel("Latitude")
 
+    # correction affichage
+    ax.ticklabel_format(style='plain', useOffset=False)
 
+    coord_text = f"Latitude: {lat:.6f}  |  Longitude: {lon:.6f}"
+
+    ax.text(
+        0.5, -0.15, coord_text,
+        transform=ax.transAxes,
+        ha='center',
+        fontsize=10
+    )
+
+    plt.tight_layout()
+    plt.savefig("/var/www/html/images/CarteFrance.png", dpi=200)
+
+    plt.close(fig)
 # =========================
-# 5. MAIN
+# Main
 # =========================
+
 if __name__ == "__main__":
 
-    # 🔁 SIMULATION (remplace par get_gnss_from_serial)
-#    raw = "+CGPSINFO: 4738.167629,N,00659.703404,E,130426,081747.0,346.9,0,"
-    result=get_gnss_from_serial()
+    result = get_gnss_from_serial()
 
     if result is None:
-        print("Pas de GPS fix")
+        print("Pas de fix GPS")
         exit()
 
     lat, lon = result
 
-    print("GNSS (deg):", lat, lon)
+    print("GNSS:", lat, lon)
 
-    x, y = gnss_to_xy(lat, lon)
+    plot_point(lat, lon)
 
-    print("Lambert-93:", x, y)
 
-    plot_point(x, y)
+while True:
+    result = get_gnss_from_serial()
+
+    if result:
+        lat, lon = result
+        plot_point(lat, lon)
+        print ("Actualisation !")
+
+    time.sleep(10)
 
