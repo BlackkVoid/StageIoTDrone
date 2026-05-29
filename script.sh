@@ -21,9 +21,9 @@ sleep 3
 sleep 3
 #sudo ./init_bluetooth.sh
 sleep 3
-#python3 test_carte_antenne.py &
+#sudo python3 test_carte_antenne.py &
 sleep 3
 #sudo python3 ./scan_bl.py &
-#sudo python3 ./scan_wifi.sh &
+#sudo ./scan_wifi.sh &
 sudo echo "</body></html>" | sudo tee -a /var/www/html/index.html > /dev/null
 echo "Lancement complété !"
