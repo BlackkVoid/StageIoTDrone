@@ -1,4 +1,7 @@
 #!/bin/bash
+#"""""""""""""""""""""""""""""""
+#Installation et lancement du point d'accès wifi
+#""""""""""""""""""""""""""""""
 sudo apt install nmcli
 sudo apt remove hostapd dnsmasq
 sudo nmcli dev wifi hotspot ifname wlan0 ssid RaspberryPi0 pass>
