@@ -1,3 +1,6 @@
+"""
+Script de scan bluetooth
+"""
 import asyncio
 import subprocess
 from bleak import BleakScanner
