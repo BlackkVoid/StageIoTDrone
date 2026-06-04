@@ -1,3 +1,7 @@
+"""
+Script permettant le lancement de la 4G
+"""
+
 import time
 import serial
 import subprocess
