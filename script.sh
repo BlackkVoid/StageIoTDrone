@@ -1,4 +1,7 @@
 #!/bin/bash
+#""""""""""""""""""""""""""
+#Script de lancement des services
+#""""""""""""""""""""""""""
 #ssh secours@IP_RASPBERRY_PI
 IP_RASPBERRY="127.0.0.1"
 PASSWORD="secours"
