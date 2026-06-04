@@ -1,4 +1,7 @@
 #!/bin/bash
+#"""""""""""""""""""""""""
+#Script de scan wifi
+#"""""""""""""""""""""""""
 ./init_wifi.sh
 sleep 20
 arp -a > echanges_wifi
