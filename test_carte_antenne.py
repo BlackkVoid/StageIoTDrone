@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Lance la carte et la réception de données GNSS
+"""
 import time
 import re
 import serial
