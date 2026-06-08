@@ -11,22 +11,22 @@ then
     sshpass -p "$PASSWORD" ssh secours@"IP_RASPBERRY" "pip install flask --break-system-packages"
     sshpass -p "$PASSWORD" ssh secours@"IP_RASPBERRY" "pip install 'numpy==1.24.2' --break-system-packages"
     sshpass -p "$PASSWORD" ssh secours@"IP_RASPBERRY" "pip install 'opencv==4.6' --break-system-packages"
-    sshpass -p "$PASSWORD" ssh secours@"IP_RASPBERRY" "pip install bleak --break-system-packages"x
+    sshpass -p "$PASSWORD" ssh secours@"IP_RASPBERRY" "pip install bleak --break-system-packages"
 else
     echo "Python existe déjà"
 fi
-#sudo rm /var/www/html/index.html
-#sudo touch /var/www/html/index.html
+sudo rm /var/www/html/index.html
+sudo touch /var/www/html/index.html
 sudo echo "<html><body><h1>Informations lancement des differentes connexions</h1>" | sudo tee /var/www/html/index.html > /dev/null
-#sudo python3 init_4g.py
+sudo python3 init_4g.py
 sleep 3
-#sudo ./init_wifi.sh
+sudo ./init_wifi.sh
 sleep 3
-#sudo ./init_bluetooth.sh
+sudo ./init_bluetooth.sh
 sleep 3
-#sudo python3 test_carte_antenne.py &
+sudo python3 test_carte_antenne.py &
 sleep 3
-#sudo python3 ./scan_bl.py &
-#sudo ./scan_wifi.sh &
+sudo python3 ./scan_bl.py &
+sudo ./scan_wifi.sh &
 sudo echo "</body></html>" | sudo tee -a /var/www/html/index.html > /dev/null
 echo "Lancement complété !"
